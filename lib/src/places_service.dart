@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_webservice/places.dart';
 import 'package:tuple/tuple.dart';
 import 'package:uuid/uuid.dart';
+import 'package:google_api_headers/google_api_headers.dart';
 
 import 'models/application_models.dart';
 
@@ -23,9 +24,11 @@ class PlacesService {
   String? get sessionToken => _sessionToken;
 
   /// Must initialize and pass in an API key.
-  void initialize({required String apiKey}) {
+  Future<void> initialize({required String apiKey}) async {
+    final headers = await GoogleApiHeaders().getHeaders();
     _places = GoogleMapsPlaces(
       apiKey: apiKey,
+      apiHeaders: headers,
     );
   }
 
@@ -44,7 +47,13 @@ class PlacesService {
 
     return _runPlacesRequest<List<PlacesAutoCompleteResult>,
         PlacesAutocompleteResponse>(
-      placesRequest: _places!.autocomplete(input, sessionToken: _sessionToken),
+      placesRequest: _places!.autocomplete(
+        input,
+        sessionToken: _sessionToken,
+        region: 'US',
+        types: ['address'],
+        components: [Component(Component.country, 'US')],
+      ),
       serialiseResponse: (autoCompleteResults) {
         final results = autoCompleteResults.predictions.where((prediction) {
           final address =
